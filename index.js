@@ -3,14 +3,15 @@ import mineflayer from 'mineflayer';
 import { readFileSync, existsSync } from 'fs';
 import express from 'express';
 
-// ==================== ⚙️ DIRECT CONFIGURATION ====================
+// ==================== ⚙️ CONFIGURATION ====================
 const CONFIG = {
-    HOST: "",
-    PORT: null,
-    MC_PASSWORD: "Gian2342341",
-    BOT_PREFIX: "spikelol",                  // Bot name prefix
-    MAX_BOTS: 4,                             // Total kitne bots ek sath active rahenge
-    SPAM_INTERVAL: 1500                      // Spam message interval (ms)
+    HOST: process.env.MC_HOST || "CraftySmpseason2.pixelforge.gg",
+    PORT: process.env.MC_PORT ? Number(process.env.MC_PORT) : null,
+    MC_PASSWORD: process.env.MC_PASSWORD || "Gian2342341",
+    BOT_PREFIX: process.env.BOT_PREFIX || "Spikelol",
+    MAX_BOTS: process.env.MAX_BOTS ? Number(process.env.MAX_BOTS) : 4,
+    VERSION: process.env.MC_VERSION || "1.20.1",
+    SPAM_INTERVAL: 1500
 };
 
 // ==================== 🌐 Express Uptime Server (Render Freeze Fix) ====================
@@ -18,7 +19,7 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 
 app.get('/', (req, res) => {
-    res.status(200).send('⚡ Spike.lol Bot Direct Raid Mode is Live!');
+    res.status(200).send('⚡ Spike.lol Bot Stable Mode is Live!');
 });
 
 app.listen(PORT, () => {
@@ -50,33 +51,33 @@ function sendLog(message) {
 function createBot(index) {
     if (!isRunning) return;
 
-    // Har naye bot ke liye ek naya random number generate hoga (jaise spikelol_4921)
     const randomNum = Math.floor(1000 + Math.random() * 9000);
     const botName = `${CONFIG.BOT_PREFIX}_${randomNum}`;
 
     const botOptions = {
         host: CONFIG.HOST,
         username: botName,
-        hideErrors: true
+        version: CONFIG.VERSION,
+        hideErrors: false
     };
-    if (CONFIG.PORT) botOptions.port = Number(CONFIG.PORT);
+    if (CONFIG.PORT) botOptions.port = CONFIG.PORT;
 
     const bot = mineflayer.createBot(botOptions);
     bots.push(bot);
 
     bot.once('spawn', () => {
-        sendLog(`🟢 Bot **${botName}** connected to ${CONFIG.HOST}`);
+        sendLog(`🟢 Bot ${botName} successfully connected to ${CONFIG.HOST}`);
         startHumanBehavior(bot);
         startSpamming(bot);
     });
 
     bot.on('death', () => {
-        sendLog(`💀 Bot **${botName}** died. Respawning...`);
+        sendLog(`💀 Bot ${botName} died. Respawning...`);
         try { bot.respawn(); } catch (e) {}
     });
 
     bot.on('windowOpen', (window) => {
-        sendLog(`🔐 Bot **${botName}** detected GUI/Chest login.`);
+        sendLog(`🔐 Bot ${botName} detected GUI/Chest login.`);
         setTimeout(() => {
             if (window && window.slots && window.slots[11]) {
                 bot.clickWindow(11, 0, 0).catch(() => {});
@@ -94,18 +95,17 @@ function createBot(index) {
         }
     });
 
-    // Jab bot ban ya kick hoga, toh yeh turant naye naam ke sath naya bot le aayega
     bot.on('end', (reason) => {
-        sendLog(`🔴 Bot **${botName}** disconnected (${reason}). Replacing with a new bot...`);
+        sendLog(`🔴 Bot ${botName} disconnected (Reason: ${reason}). Reconnecting in 5s...`);
         bots = bots.filter(b => b !== bot);
         setTimeout(() => {
-            if (isRunning) {
-                createBot(index);
-            }
-        }, 3000);
+            if (isRunning) createBot(index);
+        }, 5000);
     });
 
-    bot.on('error', () => {});
+    bot.on('error', (err) => {
+        console.log(`[BOT ERROR - ${botName}]: ${err.message}`);
+    });
 }
 
 function startHumanBehavior(bot) {
@@ -159,10 +159,9 @@ function startSpamming(bot) {
     }, CONFIG.SPAM_INTERVAL);
 }
 
-// Automatic Slot maintainer & Auto-Join system
-console.log(`[RAID SYSTEM] Initializing auto-join for ${CONFIG.HOST}...`);
+console.log(`[RAID SYSTEM] Initializing stable auto-join for server: ${CONFIG.HOST}`);
 const controlInterval = setInterval(() => {
     if (bots.length < CONFIG.MAX_BOTS && isRunning) {
         createBot(bots.length + 1);
     }
-}, 2000);
+}, 3000);
