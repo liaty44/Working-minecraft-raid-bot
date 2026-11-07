@@ -5,22 +5,22 @@ import express from 'express';
 
 // ==================== ⚙️ ENVIRONMENT CONFIGURATION ====================
 const CONFIG = {
-    HOST: process.env.MC_HOST || "", // Render variable: MC_HOST
-    PORT: process.env.MC_PORT ? Number(process.env.MC_PORT) : null,  // Render variable: MC_PORT
-    MC_PASSWORD: process.env.MC_PASSWORD || "Gian2342341",             // Render variable: MC_PASSWORD
-    BOT_PREFIX: process.env.BOT_PREFIX || "Spikelol",                // Render variable: BOT_PREFIX
-    MAX_BOTS: process.env.MAX_BOTS ? Number(process.env.MAX_BOTS) : 4, // Render variable: MAX_BOTS
-    VERSION: process.env.MC_VERSION || "1.20.1",                     // Render variable: MC_VERSION
-    SPAM_INTERVAL: 1500,
-    WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL || ""               // Render variable: DISCORD_WEBHOOK_URL
+    HOST: process.env.MC_HOST || "CraftySmpseason2.pixelforge.gg",
+    PORT: process.env.MC_PORT ? Number(process.env.MC_PORT) : null,
+    MC_PASSWORD: process.env.MC_PASSWORD || "Gian2342341",
+    BOT_PREFIX: process.env.BOT_PREFIX || "Spikelol",
+    MAX_BOTS: process.env.MAX_BOTS ? Number(process.env.MAX_BOTS) : 2, // Load kam karne ke liye max bots 2 kiye hain
+    VERSION: process.env.MC_VERSION || "1.20.1",
+    SPAM_INTERVAL: 3000,
+    WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL || ""
 };
 
-// ==================== 🌐 Express Uptime Server (Render Freeze Fix) ====================
+// ==================== 🌐 Express Uptime Server ====================
 const app = express();
 const PORT = process.env.PORT || 10000;
 
 app.get('/', (req, res) => {
-    res.status(200).send('⚡ Spike.lol Bot Variable Mode & Webhook is Live!');
+    res.status(200).send('⚡ Spike.lol Bot Throttled Mode is Live!');
 });
 
 app.listen(PORT, () => {
@@ -32,10 +32,9 @@ setInterval(() => {
 }, 45000);
 // ===================================================================================
 
-let bots = [];
+let activeBotsCount = 0;
 let isRunning = true;
 
-// 🔔 Discord Webhook Notification Function
 async function sendDiscordWebhook(content, color = 3066993) {
     if (!CONFIG.WEBHOOK_URL) return;
     try {
@@ -50,9 +49,7 @@ async function sendDiscordWebhook(content, color = 3066993) {
                 }]
             })
         });
-    } catch (err) {
-        console.log(`[WEBHOOK ERROR]: ${err.message}`);
-    }
+    } catch (err) {}
 }
 
 function getSpamMessages() {
@@ -65,11 +62,7 @@ function getSpamMessages() {
     }
 }
 
-function sendLog(message) {
-    console.log(`[RAID LOG] ${message}`);
-}
-
-function createBot(index) {
+function createBot() {
     if (!isRunning) return;
 
     const randomNum = Math.floor(1000 + Math.random() * 9000);
@@ -79,7 +72,7 @@ function createBot(index) {
         host: CONFIG.HOST,
         username: botName,
         version: CONFIG.VERSION,
-        hideErrors: false
+        hideErrors: true // Console spam bachane ke liye errors hide kiye hain
     };
     if (CONFIG.PORT) botOptions.port = CONFIG.PORT;
 
@@ -87,29 +80,24 @@ function createBot(index) {
     try {
         bot = mineflayer.createBot(botOptions);
     } catch (err) {
-        console.log(`[ERROR] Failed to create bot instance: ${err.message}`);
         return;
     }
 
-    bots.push(bot);
+    activeBotsCount++;
 
     bot.once('spawn', () => {
         const logMsg = `🟢 **Bot Connected:** \`${botName}\` joined **${CONFIG.HOST}**`;
-        sendLog(logMsg);
-        sendDiscordWebhook(logMsg, 65280); // Green
+        console.log(`[RAID LOG] ${logMsg}`);
+        sendDiscordWebhook(logMsg, 65280);
         startHumanBehavior(bot);
         startSpamming(bot);
     });
 
     bot.on('death', () => {
-        const logMsg = `💀 **Bot Died:** \`${botName}\` died. Respawning...`;
-        sendLog(logMsg);
-        sendDiscordWebhook(logMsg, 16776960); // Yellow
         try { bot.respawn(); } catch (e) {}
     });
 
     bot.on('windowOpen', (window) => {
-        sendLog(`🔐 Bot ${botName} detected GUI/Chest login.`);
         setTimeout(() => {
             if (window && window.slots && window.slots[11]) {
                 bot.clickWindow(11, 0, 0).catch(() => {});
@@ -128,21 +116,19 @@ function createBot(index) {
     });
 
     bot.on('end', (reason) => {
-        const logMsg = `🔴 **Bot Disconnected:** \`${botName}\` disconnected (Reason: *${reason}*). Replacing...`;
-        sendLog(logMsg);
-        sendDiscordWebhook(logMsg, 16711680); // Red
+        activeBotsCount = Math.max(0, activeBotsCount - 1);
+        const logMsg = `🔴 **Bot Disconnected:** \`${botName}\` (${reason}).`;
+        console.log(`[RAID LOG] ${logMsg}`);
         
-        bots = bots.filter(b => b !== bot);
+        // Server ko flood hone se bachane ke liye reconnect delay 10 second kar diya hai
         setTimeout(() => {
             if (isRunning) {
-                createBot(index);
+                createBot();
             }
-        }, 2000);
+        }, 10000);
     });
 
-    bot.on('error', (err) => {
-        console.log(`[BOT ERROR - ${botName}]: ${err.message}`);
-    });
+    bot.on('error', () => {});
 }
 
 function startHumanBehavior(bot) {
@@ -154,26 +140,7 @@ function startHumanBehavior(bot) {
         const directions = ['forward', 'back', 'left', 'right'];
         const randomDir = directions[Math.floor(Math.random() * directions.length)];
         bot.setControlState(randomDir, true);
-        setTimeout(() => { if (bot && bot.clearControlStates) bot.clearControlStates(); }, 4000);
-    }, 6000);
-
-    const jumpInterval = setInterval(() => {
-        if (!bot || !bot.entity || !bot._client || bot._client.ended) {
-            clearInterval(jumpInterval);
-            return;
-        }
-        bot.setControlState('jump', true);
-        setTimeout(() => { if (bot && bot.setControlState) bot.setControlState('jump', false); }, 500);
-    }, 10000);
-
-    const lookInterval = setInterval(() => {
-        if (!bot || !bot.entity || !bot._client || bot._client.ended) {
-            clearInterval(lookInterval);
-            return;
-        }
-        const yaw = Math.random() * Math.PI * 2;
-        const pitch = (Math.random() * Math.PI) - (Math.PI / 2);
-        bot.look(yaw, pitch, true).catch(() => {});
+        setTimeout(() => { if (bot && bot.clearControlStates) bot.clearControlStates(); }, 3000);
     }, 8000);
 }
 
@@ -196,10 +163,10 @@ function startSpamming(bot) {
     }, CONFIG.SPAM_INTERVAL);
 }
 
-// 🔄 Main Continuous Loop Handler
-console.log(`[RAID SYSTEM] Initializing dynamic variable loop for server: ${CONFIG.HOST}`);
+// 🔄 Safe Spawner Loop with gap
+console.log(`[RAID SYSTEM] Initializing safe throttled connection for: ${CONFIG.HOST}`);
 setInterval(() => {
-    if (bots.length < CONFIG.MAX_BOTS && isRunning) {
-        createBot(bots.length + 1);
+    if (activeBotsCount < CONFIG.MAX_BOTS && isRunning) {
+        createBot();
     }
-}, 1500);
+}, 5000); // Har 5 second mein ek bot join karega taaki ECONNRESET na aaye
