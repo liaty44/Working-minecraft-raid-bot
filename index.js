@@ -7,12 +7,12 @@ import express from 'express';
 const CONFIG = {
     HOST: process.env.MC_HOST || "CraftySmpseason2.pixelforge.gg",
     PORT: process.env.MC_PORT ? Number(process.env.MC_PORT) : null,
-    MC_PASSWORD: process.env.MC_PASSWORD || "Gian2342341",
-    BOT_PREFIX: process.env.BOT_PREFIX || "Spikelol",
+    MC_PASSWORD: process.env.MC_PASSWORD || "Gian2342341", // Tera password set hai
+    BOT_PREFIX: process.env.BOT_PREFIX || "Spikelol",        // Bot name prefix
     MAX_BOTS: process.env.MAX_BOTS ? Number(process.env.MAX_BOTS) : 2,
     VERSION: process.env.MC_VERSION || "1.20.1",
     SPAM_INTERVAL: 4000,
-    WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL || ""
+    WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL || ""       // Discord webhook URL
 };
 
 // ==================== 🌐 Express Uptime Server ====================
@@ -20,7 +20,7 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 
 app.get('/', (req, res) => {
-    res.status(200).send('⚡ Spike.lol Bot Clean Mode is Live!');
+    res.status(200).send('⚡ Spikelol Bot Webhook & Termux Mode is Live!');
 });
 
 app.listen(PORT, () => {
@@ -35,6 +35,7 @@ setInterval(() => {
 let activeBotsCount = 0;
 let isRunning = true;
 
+// 🔔 Discord Webhook par updates bhejne ka function
 async function sendDiscordWebhook(content, color = 3066993) {
     if (!CONFIG.WEBHOOK_URL) return;
     try {
@@ -54,11 +55,11 @@ async function sendDiscordWebhook(content, color = 3066993) {
 
 function getSpamMessages() {
     try {
-        if (!existsSync('spam.txt')) return ['Spike.lol Raid! .gg/spike.lol'];
+        if (!existsSync('spam.txt')) return ['Spikelol Raid! .gg/spikelol'];
         const content = readFileSync('spam.txt', 'utf8');
         return content.split('\n').map(m => m.trim()).filter(m => m.length > 0);
     } catch {
-        return ['Spike.lol Raid active!'];
+        return ['Spikelol Raid active!'];
     }
 }
 
@@ -88,7 +89,7 @@ function createBot() {
     bot.once('spawn', () => {
         const logMsg = `🟢 **Bot Connected:** \`${botName}\` joined **${CONFIG.HOST}**`;
         console.log(`[RAID LOG] ${logMsg}`);
-        sendDiscordWebhook(logMsg, 65280);
+        sendDiscordWebhook(logMsg, 65280); // Green
         startHumanBehavior(bot);
         startSpamming(bot);
     });
@@ -119,7 +120,9 @@ function createBot() {
         activeBotsCount = Math.max(0, activeBotsCount - 1);
         const logMsg = `🔴 **Bot Disconnected:** \`${botName}\` (${reason}).`;
         console.log(`[RAID LOG] ${logMsg}`);
+        sendDiscordWebhook(logMsg, 16711680); // Red
         
+        // Reconnect delay taaki server flood na maane
         setTimeout(() => {
             if (isRunning) {
                 createBot();
@@ -162,7 +165,7 @@ function startSpamming(bot) {
     }, CONFIG.SPAM_INTERVAL);
 }
 
-console.log(`[RAID SYSTEM] Initializing clean bot loop for: ${CONFIG.HOST}`);
+console.log(`[RAID SYSTEM] Initializing Spikelol bot loop for: ${CONFIG.HOST}`);
 setInterval(() => {
     if (activeBotsCount < CONFIG.MAX_BOTS && isRunning) {
         createBot();
