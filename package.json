@@ -1,7 +1,7 @@
 {
   "name": "spikelol-raid-bot",
   "version": "1.0.0",
-  "description": "Spike.lol Minecraft Raid Bot on Render",
+  "description": "Spike.lol Minecraft Raid Bot",
   "main": "index.js",
   "type": "module",
   "scripts": {
@@ -10,7 +10,6 @@
   "dependencies": {
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "mineflayer": "^4.20.0",
-    "socks-proxy-agent": "^8.0.3"
+    "mineflayer": "^4.20.0"
   }
 }
