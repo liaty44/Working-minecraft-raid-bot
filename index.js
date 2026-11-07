@@ -5,10 +5,10 @@ import express from 'express';
 
 // ==================== ⚙️ DIRECT CONFIGURATION ====================
 const CONFIG = {
-    HOST: "CraftySmpseason2.pixelforge.gg", // Yahan apna Minecraft server IP daal de
+    HOST: "", // Yahan apna Minecraft server IP daal de
     PORT: null,                              // Agar default port hai toh null rehne de, warna port number daal
-    MC_PASSWORD: "spike123",                 // Tera Minecraft server ka password
-    BOT_PREFIX: "spikelol",                  // Bot ka naam prefix
+    MC_PASSWORD: "Gian2342341",                 // Tera Minecraft server ka password
+    BOT_PREFIX: "Spikelol",                  // Bot ka naam prefix
     MAX_BOTS: 4,                             // Kitne bots join karwane hain
     SPAM_INTERVAL: 1500                      // Spam message interval (ms)
 };
