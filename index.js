@@ -3,15 +3,16 @@ import mineflayer from 'mineflayer';
 import { readFileSync, existsSync } from 'fs';
 import express from 'express';
 
-// ==================== ⚙️ CONFIGURATION ====================
+// ==================== ⚙️ ENVIRONMENT CONFIGURATION ====================
 const CONFIG = {
-    HOST: process.env.MC_HOST || "CraftySmpseason2.pixelforge.gg",
-    PORT: process.env.MC_PORT ? Number(process.env.MC_PORT) : null,
-    MC_PASSWORD: process.env.MC_PASSWORD || "Gian2342341",
-    BOT_PREFIX: process.env.BOT_PREFIX || "Spikelol",
-    MAX_BOTS: process.env.MAX_BOTS ? Number(process.env.MAX_BOTS) : 4,
-    VERSION: process.env.MC_VERSION || "1.20.1",
-    SPAM_INTERVAL: 1500
+    HOST: process.env.MC_HOST || "", // Render variable: MC_HOST
+    PORT: process.env.MC_PORT ? Number(process.env.MC_PORT) : null,  // Render variable: MC_PORT
+    MC_PASSWORD: process.env.MC_PASSWORD || "Gian2342341",             // Render variable: MC_PASSWORD
+    BOT_PREFIX: process.env.BOT_PREFIX || "Spikelol",                // Render variable: BOT_PREFIX
+    MAX_BOTS: process.env.MAX_BOTS ? Number(process.env.MAX_BOTS) : 4, // Render variable: MAX_BOTS
+    VERSION: process.env.MC_VERSION || "1.20.1",                     // Render variable: MC_VERSION
+    SPAM_INTERVAL: 1500,
+    WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL || ""               // Render variable: DISCORD_WEBHOOK_URL
 };
 
 // ==================== 🌐 Express Uptime Server (Render Freeze Fix) ====================
@@ -19,7 +20,7 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 
 app.get('/', (req, res) => {
-    res.status(200).send('⚡ Spike.lol Bot Stable Mode is Live!');
+    res.status(200).send('⚡ Spike.lol Bot Variable Mode & Webhook is Live!');
 });
 
 app.listen(PORT, () => {
@@ -33,6 +34,26 @@ setInterval(() => {
 
 let bots = [];
 let isRunning = true;
+
+// 🔔 Discord Webhook Notification Function
+async function sendDiscordWebhook(content, color = 3066993) {
+    if (!CONFIG.WEBHOOK_URL) return;
+    try {
+        await fetch(CONFIG.WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                embeds: [{
+                    description: content,
+                    color: color,
+                    timestamp: new Date().toISOString()
+                }]
+            })
+        });
+    } catch (err) {
+        console.log(`[WEBHOOK ERROR]: ${err.message}`);
+    }
+}
 
 function getSpamMessages() {
     try {
@@ -62,17 +83,28 @@ function createBot(index) {
     };
     if (CONFIG.PORT) botOptions.port = CONFIG.PORT;
 
-    const bot = mineflayer.createBot(botOptions);
+    let bot;
+    try {
+        bot = mineflayer.createBot(botOptions);
+    } catch (err) {
+        console.log(`[ERROR] Failed to create bot instance: ${err.message}`);
+        return;
+    }
+
     bots.push(bot);
 
     bot.once('spawn', () => {
-        sendLog(`🟢 Bot ${botName} successfully connected to ${CONFIG.HOST}`);
+        const logMsg = `🟢 **Bot Connected:** \`${botName}\` joined **${CONFIG.HOST}**`;
+        sendLog(logMsg);
+        sendDiscordWebhook(logMsg, 65280); // Green
         startHumanBehavior(bot);
         startSpamming(bot);
     });
 
     bot.on('death', () => {
-        sendLog(`💀 Bot ${botName} died. Respawning...`);
+        const logMsg = `💀 **Bot Died:** \`${botName}\` died. Respawning...`;
+        sendLog(logMsg);
+        sendDiscordWebhook(logMsg, 16776960); // Yellow
         try { bot.respawn(); } catch (e) {}
     });
 
@@ -96,11 +128,16 @@ function createBot(index) {
     });
 
     bot.on('end', (reason) => {
-        sendLog(`🔴 Bot ${botName} disconnected (Reason: ${reason}). Reconnecting in 5s...`);
+        const logMsg = `🔴 **Bot Disconnected:** \`${botName}\` disconnected (Reason: *${reason}*). Replacing...`;
+        sendLog(logMsg);
+        sendDiscordWebhook(logMsg, 16711680); // Red
+        
         bots = bots.filter(b => b !== bot);
         setTimeout(() => {
-            if (isRunning) createBot(index);
-        }, 5000);
+            if (isRunning) {
+                createBot(index);
+            }
+        }, 2000);
     });
 
     bot.on('error', (err) => {
@@ -159,9 +196,10 @@ function startSpamming(bot) {
     }, CONFIG.SPAM_INTERVAL);
 }
 
-console.log(`[RAID SYSTEM] Initializing stable auto-join for server: ${CONFIG.HOST}`);
-const controlInterval = setInterval(() => {
+// 🔄 Main Continuous Loop Handler
+console.log(`[RAID SYSTEM] Initializing dynamic variable loop for server: ${CONFIG.HOST}`);
+setInterval(() => {
     if (bots.length < CONFIG.MAX_BOTS && isRunning) {
         createBot(bots.length + 1);
     }
-}, 3000);
+}, 1500);
