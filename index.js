@@ -8,7 +8,8 @@ import express from 'express';
 const CONFIG = {
     DEFAULT_IP: "",
     DEFAULT_PORT: null,
-    MC_PASSWORD: "Spike123",
+    MC_PASSWORD: process.env.MC_PASSWORD || "spike123",
+    BOT_PREFIX: process.env.BOT_NAME_PREFIX || "spikelol",
     MAX_BOTS: 4,
     SPAM_INTERVAL: 1500
 };
@@ -65,7 +66,7 @@ function createBot(index) {
     if (!isRunning) return;
 
     const randomNum = Math.floor(1000 + Math.random() * 9000);
-    const botName = `spikelol_${randomNum}`;
+    const botName = `${CONFIG.BOT_PREFIX}_${randomNum}`;
 
     const botOptions = {
         host: targetHost,
