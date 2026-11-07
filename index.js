@@ -2,19 +2,16 @@ import 'dotenv/config';
 import mineflayer from 'mineflayer';
 import { readFileSync, existsSync } from 'fs';
 import express from 'express';
-import { SocksProxyAgent } from 'socks-proxy-agent';
-import net from 'net';
 
 // ==================== ⚙️ CONFIGURATION ====================
 const CONFIG = {
     HOST: process.env.MC_HOST || "CraftySmpseason2.pixelforge.gg",
-    PORT: process.env.MC_PORT ? Number(process.env.MC_PORT) : 25565,
+    PORT: process.env.MC_PORT ? Number(process.env.MC_PORT) : null,
     MC_PASSWORD: process.env.MC_PASSWORD || "Gian2342341",
     BOT_PREFIX: process.env.BOT_PREFIX || "Spikelol",
     MAX_BOTS: process.env.MAX_BOTS ? Number(process.env.MAX_BOTS) : 2,
     VERSION: process.env.MC_VERSION || "1.20.1",
-    SPAM_INTERVAL: 3000,
-    PROXY_URL: process.env.PROXY_URL || "", // Optional: Agar SOCKS5 proxy use karni ho toh yahan daalein
+    SPAM_INTERVAL: 4000,
     WEBHOOK_URL: process.env.DISCORD_WEBHOOK_URL || ""
 };
 
@@ -23,7 +20,7 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 
 app.get('/', (req, res) => {
-    res.status(200).send('⚡ Spike.lol Bot Render Proxy Mode is Live!');
+    res.status(200).send('⚡ Spike.lol Bot Clean Mode is Live!');
 });
 
 app.listen(PORT, () => {
@@ -73,29 +70,11 @@ function createBot() {
 
     const botOptions = {
         host: CONFIG.HOST,
-        port: CONFIG.PORT,
         username: botName,
         version: CONFIG.VERSION,
         hideErrors: true
     };
-
-    // Agar Render ke environment variables mein PROXY_URL di gayi hai, toh proxy ke through connect karega
-    if (CONFIG.PROXY_URL) {
-        try {
-            const agent = new SocksProxyAgent(CONFIG.PROXY_URL);
-            botOptions.connect = (client) => {
-                agent.callback(client, { host: CONFIG.HOST, port: CONFIG.PORT }, (err, socket) => {
-                    if (err) {
-                        client.emit('error', err);
-                        return;
-                    }
-                    client.setSocket(socket);
-                });
-            };
-        } catch (e) {
-            console.log(`[PROXY ERROR]: ${e.message}`);
-        }
-    }
+    if (CONFIG.PORT) botOptions.port = CONFIG.PORT;
 
     let bot;
     try {
@@ -127,7 +106,7 @@ function createBot() {
     });
 
     bot.on('chat', (username, message) => {
-        if (!bot || username === bot.username) erl: return;
+        if (!bot || username === bot.username) return;
         const msgLower = message.toLowerCase();
         if (msgLower.includes('register') || msgLower.includes('/reg')) {
             bot.chat(`/register ${CONFIG.MC_PASSWORD} ${CONFIG.MC_PASSWORD}`);
@@ -138,13 +117,14 @@ function createBot() {
 
     bot.on('end', (reason) => {
         activeBotsCount = Math.max(0, activeBotsCount - 1);
-        console.log(`[RAID LOG] 🔴 Bot **${botName}** disconnected (${reason}).`);
+        const logMsg = `🔴 **Bot Disconnected:** \`${botName}\` (${reason}).`;
+        console.log(`[RAID LOG] ${logMsg}`);
         
         setTimeout(() => {
             if (isRunning) {
                 createBot();
             }
-        }, 8000);
+        }, 10000);
     });
 
     bot.on('error', () => {});
@@ -182,9 +162,9 @@ function startSpamming(bot) {
     }, CONFIG.SPAM_INTERVAL);
 }
 
-console.log(`[RAID SYSTEM] Initializing Render-optimized bot system for: ${CONFIG.HOST}`);
+console.log(`[RAID SYSTEM] Initializing clean bot loop for: ${CONFIG.HOST}`);
 setInterval(() => {
     if (activeBotsCount < CONFIG.MAX_BOTS && isRunning) {
         createBot();
     }
-}, 5000);
+}, 6000);
