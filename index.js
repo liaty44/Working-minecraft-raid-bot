@@ -65,18 +65,18 @@ function createBot(index) {
     bots.push(bot);
 
     bot.once('spawn', () => {
-        sendLog(`🟢 Bot **${botName}** connected to ${CONFIG.HOST}`);[span_1](start_span)[span_1](end_span)
+        sendLog(`🟢 Bot **${botName}** connected to ${CONFIG.HOST}`);
         startHumanBehavior(bot);
         startSpamming(bot);
     });
 
     bot.on('death', () => {
-        sendLog(`💀 Bot **${botName}** died. Respawning...`);[span_2](start_span)[span_2](end_span)
+        sendLog(`💀 Bot **${botName}** died. Respawning...`);
         try { bot.respawn(); } catch (e) {}
     });
 
     bot.on('windowOpen', (window) => {
-        sendLog(`🔐 Bot **${botName}** detected GUI/Chest login.`);[span_3](start_span)[span_3](end_span)
+        sendLog(`🔐 Bot **${botName}** detected GUI/Chest login.`);
         setTimeout(() => {
             if (window && window.slots && window.slots[11]) {
                 bot.clickWindow(11, 0, 0).catch(() => {});
@@ -88,15 +88,15 @@ function createBot(index) {
         if (!bot || username === bot.username) return;
         const msgLower = message.toLowerCase();
         if (msgLower.includes('register') || msgLower.includes('/reg')) {
-            bot.chat(`/register ${CONFIG.MC_PASSWORD} ${CONFIG.MC_PASSWORD}`);[span_4](start_span)[span_4](end_span)
+            bot.chat(`/register ${CONFIG.MC_PASSWORD} ${CONFIG.MC_PASSWORD}`);
         } else if (msgLower.includes('login') || msgLower.includes('/l')) {
-            bot.chat(`/login ${CONFIG.MC_PASSWORD}`);[span_5](start_span)[span_5](end_span)
+            bot.chat(`/login ${CONFIG.MC_PASSWORD}`);
         }
     });
 
     // Jab bot ban ya kick hoga, toh yeh turant naye naam ke sath naya bot le aayega
     bot.on('end', (reason) => {
-        sendLog(`🔴 Bot **${botName}** disconnected (${reason}). Replacing with a new bot...`);[span_6](start_span)[span_6](end_span)
+        sendLog(`🔴 Bot **${botName}** disconnected (${reason}). Replacing with a new bot...`);
         bots = bots.filter(b => b !== bot);
         setTimeout(() => {
             if (isRunning) {
@@ -160,7 +160,7 @@ function startSpamming(bot) {
 }
 
 // Automatic Slot maintainer & Auto-Join system
-console.log(`[RAID SYSTEM] Initializing auto-join for ${CONFIG.HOST}...`);[span_7](start_span)[span_7](end_span)
+console.log(`[RAID SYSTEM] Initializing auto-join for ${CONFIG.HOST}...`);
 const controlInterval = setInterval(() => {
     if (bots.length < CONFIG.MAX_BOTS && isRunning) {
         createBot(bots.length + 1);
