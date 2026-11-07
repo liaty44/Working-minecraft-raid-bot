@@ -20,7 +20,7 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 
 app.get('/', (req, res) => {
-    res.status(200).send('⚡ Spikelol Bot Webhook & Termux Mode is Live!');
+    res.status(200).send('⚡ Spikelol Render Bot is Live!');
 });
 
 app.listen(PORT, () => {
@@ -122,7 +122,6 @@ function createBot() {
         console.log(`[RAID LOG] ${logMsg}`);
         sendDiscordWebhook(logMsg, 16711680); // Red
         
-        // Reconnect delay taaki server flood na maane
         setTimeout(() => {
             if (isRunning) {
                 createBot();
@@ -165,7 +164,7 @@ function startSpamming(bot) {
     }, CONFIG.SPAM_INTERVAL);
 }
 
-console.log(`[RAID SYSTEM] Initializing Spikelol bot loop for: ${CONFIG.HOST}`);
+console.log(`[RAID SYSTEM] Initializing Render Spikelol bot loop for: ${CONFIG.HOST}`);
 setInterval(() => {
     if (activeBotsCount < CONFIG.MAX_BOTS && isRunning) {
         createBot();
