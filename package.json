@@ -1,17 +1,16 @@
 {
   "name": "spikelol-raid-bot",
   "version": "1.0.0",
-  "description": "Optimized Minecraft & Discord Raid Bot",
-  "type": "module",
+  "description": "Spike.lol Minecraft Raid Bot on Render",
   "main": "index.js",
+  "type": "module",
   "scripts": {
-    "build": "echo 'Build process completed successfully'",
     "start": "node index.js"
   },
   "dependencies": {
-    "discord.js": "^14.14.1",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
-    "mineflayer": "^4.20.0"
+    "mineflayer": "^4.20.0",
+    "socks-proxy-agent": "^8.0.3"
   }
 }
