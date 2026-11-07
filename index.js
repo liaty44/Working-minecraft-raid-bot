@@ -1,17 +1,16 @@
 import 'dotenv/config';
-import { Client, GatewayIntentBits, REST, Routes, SlashCommandBuilder, ActionRowBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import mineflayer from 'mineflayer';
 import { readFileSync, existsSync } from 'fs';
 import express from 'express';
 
-// ==================== ⚙️ CONFIGURATION ====================
+// ==================== ⚙️ DIRECT CONFIGURATION ====================
 const CONFIG = {
-    DEFAULT_IP: "",
-    DEFAULT_PORT: null,
-    MC_PASSWORD: process.env.MC_PASSWORD || "spike123",
-    BOT_PREFIX: process.env.BOT_NAME_PREFIX || "spikelol",
-    MAX_BOTS: 4,
-    SPAM_INTERVAL: 1500
+    HOST: "CraftySmpseason2.pixelforge.gg", // Yahan apna Minecraft server IP daal de
+    PORT: null,                              // Agar default port hai toh null rehne de, warna port number daal
+    MC_PASSWORD: "spike123",                 // Tera Minecraft server ka password
+    BOT_PREFIX: "spikelol",                  // Bot ka naam prefix
+    MAX_BOTS: 4,                             // Kitne bots join karwane hain
+    SPAM_INTERVAL: 1500                      // Spam message interval (ms)
 };
 
 // ==================== 🌐 Express Uptime Server (Render Freeze Fix) ====================
@@ -19,11 +18,7 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 
 app.get('/', (req, res) => {
-    res.status(200).send('⚡ Spike.lol Bot is Live and Running!');
-});
-
-app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'OK', uptime: process.uptime() });
+    res.status(200).send('⚡ Spike.lol Bot Direct Mode is Live!');
 });
 
 app.listen(PORT, () => {
@@ -35,18 +30,8 @@ setInterval(() => {
 }, 45000);
 // ===================================================================================
 
-const TOKEN = process.env.DISCORD_TOKEN;
-const CLIENT_ID = process.env.DISCORD_CLIENT_ID;
-
-const client = new Client({
-    intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages]
-});
-
-let targetHost = CONFIG.DEFAULT_IP;
-let targetPort = CONFIG.DEFAULT_PORT;
-let isRunning = false;
-let sleepMode = false;
 let bots = [];
+let isRunning = true;
 
 function getSpamMessages() {
     try {
@@ -69,17 +54,17 @@ function createBot(index) {
     const botName = `${CONFIG.BOT_PREFIX}_${randomNum}`;
 
     const botOptions = {
-        host: targetHost,
+        host: CONFIG.HOST,
         username: botName,
         hideErrors: true
     };
-    if (targetPort) botOptions.port = Number(targetPort);
+    if (CONFIG.PORT) botOptions.port = Number(CONFIG.PORT);
 
     const bot = mineflayer.createBot(botOptions);
     bots.push(bot);
 
     bot.once('spawn', () => {
-        sendLog(`🟢 Bot **${botName}** connected to ${targetHost}`);
+        sendLog(`🟢 Bot **${botName}** connected to ${CONFIG.HOST}`);
         startHumanBehavior(bot);
         startSpamming(bot);
     });
@@ -109,8 +94,11 @@ function createBot(index) {
     });
 
     bot.on('end', (reason) => {
-        sendLog(`🔴 Bot **${botName}** disconnected (${reason}). Cleaning up...`);
+        sendLog(`🔴 Bot **${botName}** disconnected (${reason}). Reconnecting...`);
         bots = bots.filter(b => b !== bot);
+        setTimeout(() => {
+            if (isRunning) createBot(index);
+        }, 3000);
     });
 
     bot.on('error', () => {});
@@ -150,7 +138,7 @@ function startHumanBehavior(bot) {
 
 function startSpamming(bot) {
     const spamInterval = setInterval(() => {
-        if (!bot || !bot.entity || !bot._client || bot._client.ended || sleepMode) {
+        if (!bot || !bot.entity || !bot._client || bot._client.ended) {
             clearInterval(spamInterval);
             return;
         }
@@ -167,58 +155,10 @@ function startSpamming(bot) {
     }, CONFIG.SPAM_INTERVAL);
 }
 
-function startRaidSystem() {
-    isRunning = true;
-    const controlInterval = setInterval(() => {
-        if (!isRunning) {
-            clearInterval(controlInterval);
-            return;
-        }
-        if (bots.length < CONFIG.MAX_BOTS && !sleepMode) {
-            createBot(bots.length + 1);
-        }
-    }, CONFIG.SPAM_INTERVAL);
-}
-
-const commands = [
-    new SlashCommandBuilder().setName('start').setDescription('Start raid bots'),
-    new SlashCommandBuilder().setName('stop').setDescription('Stop all bots'),
-    new SlashCommandBuilder().setName('ip').setDescription('Configure server IP and Port')
-].map(cmd => cmd.toJSON());
-
-const rest = new REST({ version: '10' }).setToken(TOKEN);
-
-client.once('ready', async () => {
-    console.log(`[DISCORD] Logged in as ${client.user.tag}`);
-    await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
-});
-
-client.on('interactionCreate', async (interaction) => {
-    if (interaction.isChatInputCommand()) {
-        const { commandName } = interaction;
-        if (commandName === 'ip') {
-            const modal = new ModalBuilder().setCustomId('ip_modal').setTitle('Server IP & Port Configuration');
-            const ipInput = new TextInputBuilder().setCustomId('server_ip').setLabel('Server IP').setStyle(TextInputStyle.Short).setRequired(true);
-            const portInput = new TextInputBuilder().setCustomId('server_port').setLabel('Port (Optional)').setStyle(TextInputStyle.Short).setRequired(false);
-            modal.addComponents(new ActionRowBuilder().addComponents(ipInput), new ActionRowBuilder().addComponents(portInput));
-            await interaction.showModal(modal);
-        } else if (commandName === 'start') {
-            if (!targetHost) return interaction.reply({ content: '❌ Pehle `/ip` se IP set karein!', ephemeral: true });
-            if (isRunning) return interaction.reply({ content: '⚠️ Bots pehle se chal rahe hain!', ephemeral: true });
-            startRaidSystem();
-            await interaction.reply({ content: `🚀 **Raid started!** Connecting ${CONFIG.MAX_BOTS} bots to **${targetHost}**...`, ephemeral: true });
-        } else if (commandName === 'stop') {
-            isRunning = false;
-            bots.forEach(b => { try { b.quit(); } catch (e) {} });
-            bots = [];
-            await interaction.reply({ content: '🛑 **Stopped!** All bots disconnected.', ephemeral: true });
-        }
-    } else if (interaction.isModalSubmit() && interaction.customId === 'ip_modal') {
-        targetHost = interaction.fields.getTextInputValue('server_ip').trim();
-        const portVal = interaction.fields.getTextInputValue('server_port').trim();
-        targetPort = portVal ? parseInt(portVal) : null;
-        await interaction.reply({ content: `✅ Target saved: \`${targetHost}:${portVal || 'Default'}\``, ephemeral: true });
+// Start joining bots automatically as soon as app starts
+console.log(`[RAID SYSTEM] Initializing automatic join for ${CONFIG.HOST}...`);
+const controlInterval = setInterval(() => {
+    if (bots.length < CONFIG.MAX_BOTS && isRunning) {
+        createBot(bots.length + 1);
     }
-});
-
-client.login(TOKEN);
+}, 2000);
