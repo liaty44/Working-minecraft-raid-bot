@@ -5,11 +5,11 @@ import express from 'express';
 
 // ==================== ⚙️ DIRECT CONFIGURATION ====================
 const CONFIG = {
-    HOST: "", // Yahan apna Minecraft server IP daal de
-    PORT: null,                              // Agar default port hai toh null rehne de, warna port number daal
-    MC_PASSWORD: "Gian2342341",                 // Tera Minecraft server ka password
-    BOT_PREFIX: "Spikelol",                  // Bot ka naam prefix
-    MAX_BOTS: 4,                             // Kitne bots join karwane hain
+    HOST: "",
+    PORT: null,
+    MC_PASSWORD: "Gian2342341",
+    BOT_PREFIX: "spikelol",                  // Bot name prefix
+    MAX_BOTS: 4,                             // Total kitne bots ek sath active rahenge
     SPAM_INTERVAL: 1500                      // Spam message interval (ms)
 };
 
@@ -18,7 +18,7 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 
 app.get('/', (req, res) => {
-    res.status(200).send('⚡ Spike.lol Bot Direct Mode is Live!');
+    res.status(200).send('⚡ Spike.lol Bot Direct Raid Mode is Live!');
 });
 
 app.listen(PORT, () => {
@@ -50,6 +50,7 @@ function sendLog(message) {
 function createBot(index) {
     if (!isRunning) return;
 
+    // Har naye bot ke liye ek naya random number generate hoga (jaise spikelol_4921)
     const randomNum = Math.floor(1000 + Math.random() * 9000);
     const botName = `${CONFIG.BOT_PREFIX}_${randomNum}`;
 
@@ -64,18 +65,18 @@ function createBot(index) {
     bots.push(bot);
 
     bot.once('spawn', () => {
-        sendLog(`🟢 Bot **${botName}** connected to ${CONFIG.HOST}`);
+        sendLog(`🟢 Bot **${botName}** connected to ${CONFIG.HOST}`);[span_1](start_span)[span_1](end_span)
         startHumanBehavior(bot);
         startSpamming(bot);
     });
 
     bot.on('death', () => {
-        sendLog(`💀 Bot **${botName}** died. Respawning...`);
+        sendLog(`💀 Bot **${botName}** died. Respawning...`);[span_2](start_span)[span_2](end_span)
         try { bot.respawn(); } catch (e) {}
     });
 
     bot.on('windowOpen', (window) => {
-        sendLog(`🔐 Bot **${botName}** detected GUI/Chest login.`);
+        sendLog(`🔐 Bot **${botName}** detected GUI/Chest login.`);[span_3](start_span)[span_3](end_span)
         setTimeout(() => {
             if (window && window.slots && window.slots[11]) {
                 bot.clickWindow(11, 0, 0).catch(() => {});
@@ -87,17 +88,20 @@ function createBot(index) {
         if (!bot || username === bot.username) return;
         const msgLower = message.toLowerCase();
         if (msgLower.includes('register') || msgLower.includes('/reg')) {
-            bot.chat(`/register ${CONFIG.MC_PASSWORD} ${CONFIG.MC_PASSWORD}`);
+            bot.chat(`/register ${CONFIG.MC_PASSWORD} ${CONFIG.MC_PASSWORD}`);[span_4](start_span)[span_4](end_span)
         } else if (msgLower.includes('login') || msgLower.includes('/l')) {
-            bot.chat(`/login ${CONFIG.MC_PASSWORD}`);
+            bot.chat(`/login ${CONFIG.MC_PASSWORD}`);[span_5](start_span)[span_5](end_span)
         }
     });
 
+    // Jab bot ban ya kick hoga, toh yeh turant naye naam ke sath naya bot le aayega
     bot.on('end', (reason) => {
-        sendLog(`🔴 Bot **${botName}** disconnected (${reason}). Reconnecting...`);
+        sendLog(`🔴 Bot **${botName}** disconnected (${reason}). Replacing with a new bot...`);[span_6](start_span)[span_6](end_span)
         bots = bots.filter(b => b !== bot);
         setTimeout(() => {
-            if (isRunning) createBot(index);
+            if (isRunning) {
+                createBot(index);
+            }
         }, 3000);
     });
 
@@ -155,8 +159,8 @@ function startSpamming(bot) {
     }, CONFIG.SPAM_INTERVAL);
 }
 
-// Start joining bots automatically as soon as app starts
-console.log(`[RAID SYSTEM] Initializing automatic join for ${CONFIG.HOST}...`);
+// Automatic Slot maintainer & Auto-Join system
+console.log(`[RAID SYSTEM] Initializing auto-join for ${CONFIG.HOST}...`);[span_7](start_span)[span_7](end_span)
 const controlInterval = setInterval(() => {
     if (bots.length < CONFIG.MAX_BOTS && isRunning) {
         createBot(bots.length + 1);
